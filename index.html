@@ -3,167 +3,331 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orsk Digger Project</title>
+    <title>Orsk Digger Project | Swag Team</title>
+    <link rel="icon" type="image/png" href="assets/logo.png">
     
-    <!-- Стили Карты -->
+    <!-- Основная библиотека для зума картинок -->
     <link rel="stylesheet" href="https://unpkg.com" />
-    
+    <script src="https://unpkg.com"></script>
+
     <style>
-        :root { --y: #ffcc00; --b: #0a0a0a; --g: #1a1a1a; --text: #e0e0e0; }
-        body { background: var(--b); color: var(--text); font-family: 'Courier New', monospace; margin: 0; }
-        .container { max-width: 1200px; width: 85%; margin: 0 auto; padding: 40px 0; }
-        header { background: var(--y); color: var(--b); padding: 40px 0; text-align: center; border-bottom: 5px solid #333; }
-        header h1 { margin: 0; font-size: 36px; letter-spacing: 5px; }
-        nav { display: flex; justify-content: center; gap: 20px; margin: 30px 0; }
-        nav button { background: none; border: 2px solid var(--y); color: var(--y); padding: 12px 30px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+        :root { --y: #ffcc00; --b: #0a0a0a; --g: #1a1a1a; --text: #e0e0e0; --accent: #ffcc00; }
+        [data-theme="bw"] { --y: #ffffff; --b: #000000; --g: #111111; --text: #ffffff; --accent: #888888; }
+        [data-theme="boykisser"] { --y: #ff80ab; --b: #fff0f6; --g: #ffffff; --text: #880e4f; --accent: #f06292; }
+
+        body { background: var(--b); color: var(--text); font-family: 'Courier New', monospace; margin: 0; transition: 0.3s; display: flex; flex-direction: column; min-height: 100vh; }
+        .container { max-width: 1200px; width: 90%; margin: 0 auto; padding: 20px 0; flex: 1; }
+        
+        header { background: var(--y); color: var(--b); padding: 50px 0; text-align: center; border-bottom: 8px solid var(--accent); }
+        .logo-img { width: 250px; height: 250px; border-radius: 50%; border: 8px solid var(--b); margin-bottom: 20px; object-fit: cover; box-shadow: 0 0 40px rgba(0,0,0,0.6); cursor: pointer; transition: transform 0.1s; }
+        .logo-img:active { transform: scale(1.1); }
+        
+        header h1 { margin: 0; font-size: 38px; letter-spacing: 5px; text-transform: uppercase; font-weight: 900; }
+        .team-desc { max-width: 750px; margin: 15px auto 0; font-size: 14px; line-height: 1.6; font-weight: bold; background: rgba(0,0,0,0.1); padding: 15px; border-radius: 5px; }
+
+        .lvl-box { margin-top: 25px; background: rgba(0,0,0,0.5); display: inline-block; padding: 15px 30px; border: 2px solid var(--b); }
+        .xp-bar { width: 250px; height: 12px; background: #333; display: inline-block; border: 1px solid var(--b); position: relative; }
+        #xp-fill { height: 100%; background: var(--b); width: 0%; transition: 1s ease-in-out; }
+
+        nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 30px 0; }
+        nav button, nav select { background: var(--g); border: 2px solid var(--y); color: var(--y); padding: 12px 18px; cursor: pointer; font-weight: bold; font-family: inherit; }
         nav button.active { background: var(--y); color: var(--b); }
-        .page { display: none; }
+
+        /* КАРТА */
+        #map-container { height: 600px; width: 100%; border: 4px solid var(--y); background: #000; position: relative; overflow: hidden; }
+        #map { height: 100%; width: 100%; cursor: crosshair; }
+        
+        .sub-nav { display: flex; gap: 10px; margin-bottom: 15px; }
+        .sub-nav button { flex: 1; padding: 15px; background: var(--g); color: var(--y); border: 2px solid var(--y); font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .sub-nav button.active { background: var(--y); color: var(--b); }
+
+        .page { display: none; min-height: 600px; }
         .page.active { display: block; }
-        #map { height: 550px; width: 100%; border: 3px solid var(--y); background: #111; }
-        .form-section { background: var(--g); padding: 30px; border-radius: 4px; margin-bottom: 40px; }
-        input, textarea { width: 100%; padding: 15px; margin: 10px 0; background: #000; border: 1px solid #444; color: var(--y); box-sizing: border-box; font-family: inherit; }
-        .btn-send { background: var(--y); color: var(--b); border: none; padding: 15px; width: 100%; font-weight: bold; cursor: pointer; font-size: 16px; }
-        .post-card { background: var(--g); padding: 25px; margin-bottom: 25px; border-left: 5px solid var(--y); position: relative; }
-        .post-card h2 { color: var(--y); margin-top: 0; padding-right: 100px; }
-        .post-card .date { color: #666; font-size: 13px; margin-bottom: 10px; }
-        .post-card p { white-space: pre-wrap; line-height: 1.5; }
-        .post-card img { max-width: 100%; border: 1px solid #333; margin-top: 15px; display: block; }
-        .btn-delete { position: absolute; top: 20px; right: 20px; background: #8b0000; color: white; border: none; padding: 5px 10px; cursor: pointer; font-size: 11px; font-weight: bold; }
+        
+        .form-section { background: var(--g); padding: 25px; border: 2px solid var(--y); margin-bottom: 30px; }
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0; background: var(--b); border: 1px solid var(--y); color: var(--text); box-sizing: border-box; font-family: inherit; }
+        .btn-send { background: var(--y); color: var(--b); border: none; padding: 18px; width: 100%; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        
+        .post-card { background: var(--g); padding: 25px; margin-bottom: 20px; border-left: 10px solid var(--y); position: relative; }
+        .post-meta { color: var(--y); font-size: 12px; margin-bottom: 10px; font-weight: bold; }
+        .btn-delete { position: absolute; top: 10px; right: 10px; background: #c00; color: #fff; border: none; padding: 5px; cursor: pointer; font-size: 10px; }
+        
+        footer { background: var(--b); color: var(--y); text-align: center; padding: 30px; border-top: 4px solid var(--y); margin-top: 50px; font-weight: 900; text-transform: uppercase; }
+        
+        /* Попап */
+        .leaflet-popup-content-wrapper { background: var(--g); color: var(--y); border: 1px solid var(--y); border-radius: 0; }
+        .leaflet-popup-tip { background: var(--y); }
+        .pop-btn { background: var(--y); border: none; padding: 5px; margin-top: 5px; width: 100%; cursor: pointer; font-weight: bold; font-family: inherit; }
     </style>
 </head>
 <body>
 
-<header><h1>ORSK DIGGER PROJECT</h1></header>
+<header>
+    <img src="assets/logo.png" id="main-logo" class="logo-img" onclick="playMeow()" onerror="this.src='https://placeholder.com'">
+    <h1>ORSK DIGGER PROJECT</h1>
+    <div class="team-desc">
+        Форум диггеров из команды Swag Team. Исследуем забытые тоннели Орска. Настоящий диггер не оставляет следов, а секреты подземелий не терпят суеты.
+    </div>
+    <div class="lvl-box">
+        <span id="lvl-text" style="font-size: 18px; font-weight: bold;">Статус: Загрузка...</span>
+        <div style="margin-top: 8px;">
+            <div class="xp-bar"><div id="xp-fill"></div></div>
+            <div id="xp-text" style="font-size: 13px; font-weight: bold;">0 XP</div>
+        </div>
+    </div>
+</header>
 
 <div class="container">
     <nav>
-        <button id="btn-map" class="active" onclick="switchTab('map-page')">Карта</button>
-        <button id="btn-blog" onclick="switchTab('blog-page')">Записи</button>
+        <button onclick="switchTab('map-page')" id="nav-map-page" class="active">КАРТА</button>
+        <button onclick="switchTab('blog-page')" id="nav-blog-page">АРХИВ</button>
+        <button onclick="switchTab('forum-page')" id="nav-forum-page">ФОРУМ</button>
+        <button onclick="switchTab('wiki-page')" id="nav-wiki-page">ВИКИ</button>
+        <select id="theme-select" onchange="changeTheme(this.value)">
+            <option value="default">☢ СТАНДАРТ</option>
+            <option value="bw">⬚ ЧБ</option>
+            <option value="boykisser">✿ BOYKISSER :3</option>
+        </select>
+        <button onclick="changeNick()">[ <span id="current-nick">...</span> ]</button>
     </nav>
 
     <div id="map-page" class="page active">
-        <div id="map"></div>
-        <p style="color:var(--y); text-align:center; margin-top:10px;">Кликни по карте, чтобы добавить метку объекта.</p>
+        <div class="sub-nav">
+            <button onclick="setMapImg('MapOsn.JPG')" id="m-btn-osn">ОСНОВНАЯ</button>
+            <button onclick="setMapImg('MapLenkom.PNG')" id="m-btn-lenkom">ЛЕНКОМ</button>
+        </div>
+        <div id="map-container">
+            <div id="map"></div>
+        </div>
+        <p style="color:var(--y); text-align:center; font-size: 11px; margin-top: 10px;">[ ЗУМ КОЛЕСИКОМ. КЛИК ПО КАРТЕ — СОЗДАТЬ ЗАМЕТКУ ]</p>
     </div>
 
+    <!-- Другие страницы (Архив, Форум, Вики) -->
     <div id="blog-page" class="page">
         <div class="form-section">
-            <h2 style="color:var(--y); margin:0;">Новый отчет</h2>
-            <input type="text" id="t-title" placeholder="Объект">
-            <textarea id="t-body" rows="4" placeholder="Текст отчета..."></textarea>
-            <input type="text" id="t-img" placeholder="Ссылка на фото (необязательно)">
-            <button class="btn-send" onclick="sendPost()">ОПУБЛИКОВАТЬ В АРХИВ</button>
+            <input type="text" id="t-title" placeholder="ОБЪЕКТ">
+            <textarea id="t-body" rows="3" placeholder="ОТЧЕТ..."></textarea>
+            <input type="text" id="t-img" placeholder="URL ФОТО">
+            <button class="btn-send" onclick="sendPost()">ВНЕСТИ В АРХИВ (+10 XP)</button>
         </div>
-        <h2 style="color:var(--y); text-align: center; letter-spacing: 3px; margin-top: 50px;">АРХИВ ЗАПИСЕЙ</h2>
         <div id="feed"></div>
+    </div>
+
+    <div id="forum-page" class="page">
+        <div class="sub-nav">
+            <button onclick="setForumCat('flud')" id="f-btn-flud" class="active">ФЛУДИЛКА</button>
+            <button onclick="setForumCat('zalaz')" id="f-btn-zalaz">ОБСУЖДЕНИЕ</button>
+        </div>
+        <div class="form-section">
+            <textarea id="f-msg" rows="2" placeholder="НАПИСАТЬ СООБЩЕНИЕ..."></textarea>
+            <button class="btn-send" onclick="sendForum()">ОТПРАВИТЬ (+5 XP)</button>
+        </div>
+        <div id="forum-feed"></div>
+    </div>
+
+    <div id="wiki-page" class="page">
+        <div class="form-section">
+            <input type="text" id="w-obj" placeholder="ИМЯ ОБЪЕКТА">
+            <textarea id="w-desc" rows="4" placeholder="ОПИСАНИЕ..."></textarea>
+            <input type="text" id="w-img" placeholder="URL ФОТО">
+            <button class="btn-send" onclick="saveWiki()">СОХРАНИТЬ (+15 XP)</button>
+        </div>
+        <div id="wiki-feed"></div>
     </div>
 </div>
 
-<!-- ПОДКЛЮЧЕНИЕ БИБЛИОТЕК -->
-<script src="https://www.gstatic.com"></script>
-<script src="https://www.gstatic.com"></script>
-<script src="https://unpkg.com"></script>
+<footer>КТО ЗАДУДОСИТ ЭТОТ САЙТ ТОТ ПИДОРАС</footer>
+
+<!-- Firebase скрипты -->
+<script src="https://gstatic.com"></script>
+<script src="https://gstatic.com"></script>
 
 <script>
-    // Глобальные переменные
-    var database;
-    var map;
+    let db, map, imgLayer;
+    let userNick = localStorage.getItem('digger_nick');
+    let userXP = 0;
+    let currentMap = 'MapOsn.JPG';
+    let markersList = {};
 
-    // 1. ФУНКЦИИ НАВИГАЦИИ И ПУБЛИКАЦИИ
-    function switchTab(tabId) {
+    window.onload = function() {
+        if (!userNick) {
+            let n = prompt("ВВЕДИ СВОЙ ПОЗЫВНОЙ:");
+            if (n) { localStorage.setItem('digger_nick', n); location.reload(); }
+        } else {
+            initApp();
+        }
+    };
+
+    function initApp() {
+        document.getElementById('current-nick').innerText = userNick;
+        changeTheme(localStorage.getItem('site_theme') || 'default');
+        
+        firebase.initializeApp({ databaseURL: "https://firebasedatabase.app" });
+        db = firebase.database();
+
+        initMap();
+        loadBlog(); loadForum('flud'); loadWiki(); syncXP();
+    }
+
+    function playMeow() { new Audio('assets/meow.mp3').play().catch(()=>{}); }
+
+    // --- ЛОГИКА КАРТЫ-КАРТИНКИ ---
+    function initMap() {
+        // CRS.Simple отключает географию, карта работает на пикселях
+        map = L.map('map', {
+            crs: L.CRS.Simple,
+            minZoom: -3,
+            maxZoom: 2,
+            attributionControl: false
+        });
+
+        setMapImg(currentMap);
+
+        map.on('click', (e) => {
+            let note = prompt("Название объекта:");
+            if(!note) return;
+            let wiki = prompt("Связать со статьей Вики (имя):", "");
+            
+            let path = currentMap.replace('.', '_');
+            db.ref('markers/' + path).push({
+                y: e.latlng.lat, 
+                x: e.latlng.lng, 
+                note: note, 
+                wiki: wiki,
+                author: userNick
+            });
+            addXP(5);
+        });
+    }
+
+    function setMapImg(file) {
+        currentMap = file;
+        document.getElementById('m-btn-osn').className = (file === 'MapOsn.JPG' ? 'active' : '');
+        document.getElementById('m-btn-lenkom').className = (file === 'MapLenkom.PNG' ? 'active' : '');
+
+        if (imgLayer) map.removeLayer(imgLayer);
+        Object.values(markersList).forEach(m => map.removeLayer(m));
+        markersList = {};
+
+        let img = new Image();
+        img.src = 'assets/' + file;
+        img.onload = function() {
+            let w = this.width, h = this.height;
+            let bounds = [, [h, w]];
+            imgLayer = L.imageOverlay(img.src, bounds).addTo(map);
+            map.fitBounds(bounds);
+            loadMarkers(file);
+        };
+        img.onerror = () => { console.error("Файл не найден: assets/" + file); };
+    }
+
+    function loadMarkers(file) {
+        let path = file.replace('.', '_');
+        db.ref('markers/' + path).off();
+        db.ref('markers/' + path).on('value', (snap) => {
+            Object.values(markersList).forEach(m => map.removeLayer(m));
+            markersList = {};
+            let data = snap.val();
+            if(!data) return;
+
+            Object.keys(data).forEach(id => {
+                let d = data[id];
+                let m = L.marker([d.y, d.x]).addTo(map);
+                let html = `<b>${d.note}</b><br><small>Диггер: ${d.author}</small>`;
+                if(d.wiki) html += `<br><button class="pop-btn" onclick="switchTab('wiki-page')">СТАТЬЯ ВИКИ</button>`;
+                if(d.author === userNick) {
+                    html += `<br><button class="pop-btn" onclick="editM('${id}','${d.note}')">ИЗМЕНИТЬ</button>`;
+                    html += `<button class="pop-btn" style="background:#500;color:#fff" onclick="delM('${id}')">УДАЛИТЬ</button>`;
+                }
+                m.bindPopup(html);
+                markersList[id] = m;
+            });
+        });
+    }
+
+    function delM(id) { if(confirm("Удалить?")) db.ref('markers/'+currentMap.replace('.','_')+'/'+id).remove(); }
+    function editM(id, old) { 
+        let n = prompt("Новое имя:", old); 
+        if(n) db.ref('markers/'+currentMap.replace('.','_')+'/'+id).update({note: n}); 
+    }
+
+    // --- ОСТАЛЬНОЙ ФУНКЦИОНАЛ ---
+    function syncXP() { db.ref('users/' + userNick).on('value', s => { userXP = s.val() || 0; updateLVL(); }); }
+    function addXP(v) { db.ref('users/' + userNick).set(userXP + v); }
+    function updateLVL() {
+        let lvl = "Школьник", next = 50;
+        if (userXP >= 1000) { lvl = "Крутэлык"; next = userXP; }
+        else if (userXP >= 400) { lvl = "Диггер"; next = 1000; }
+        else if (userXP >= 150) { lvl = "Лазальщик"; next = 400; }
+        else if (userXP >= 50) { lvl = "Дренажная Крыса"; next = 150; }
+        document.getElementById('lvl-text').innerText = "Статус: " + lvl;
+        document.getElementById('xp-text').innerText = `${userXP}/${next} XP`;
+        document.getElementById('xp-fill').style.width = (userXP >= 1000 ? 100 : (userXP/next*100)) + "%";
+    }
+
+    function switchTab(id) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-        
-        document.getElementById(tabId).classList.add('active');
-        if(tabId === 'map-page') {
-            document.getElementById('btn-map').classList.add('active');
-            if (map) setTimeout(() => map.invalidateSize(), 200);
-        } else {
-            document.getElementById('btn-blog').classList.add('active');
-        }
+        document.getElementById(id).classList.add('active');
+        document.getElementById('nav-'+id).classList.add('active');
+        if(id === 'map-page' && map) setTimeout(() => map.invalidateSize(), 100);
+    }
+
+    function changeTheme(t) {
+        t === 'default' ? document.documentElement.removeAttribute('data-theme') : document.documentElement.setAttribute('data-theme', t);
+        localStorage.setItem('site_theme', t);
     }
 
     function sendPost() {
-        if (!database) return alert("База данных еще не готова!");
-        const title = document.getElementById('t-title').value;
-        const body = document.getElementById('t-body').value;
-        const img = document.getElementById('t-img').value;
-        const date = new Date().toLocaleString('ru-RU');
-
-        if (!title || !body) return alert("Заполни заголовок и текст!");
-
-        database.ref('posts').push({ title, body, img: img || "", date })
-        .then(() => {
-            document.getElementById('t-title').value = '';
-            document.getElementById('t-body').value = '';
-            document.getElementById('t-img').value = '';
-        }).catch(e => console.error("Ошибка Firebase:", e));
+        let t = document.getElementById('t-title').value, b = document.getElementById('t-body').value;
+        if(t && b) { db.ref('posts').push({ title: t, body: b, img: document.getElementById('t-img').value, author: userNick, date: new Date().toLocaleString() }); addXP(10); }
     }
 
-    function deletePost(id) {
-        if(confirm("Удалить отчет из архива?")) {
-            database.ref('posts').child(id).remove();
-        }
+    function loadBlog() {
+        db.ref('posts').on('value', s => {
+            let feed = document.getElementById('feed'); feed.innerHTML = '';
+            let d = s.val();
+            if(d) Object.keys(d).reverse().forEach(k => {
+                let p = d[k]; feed.innerHTML += `<div class="post-card"><button class="btn-delete" onclick="db.ref('posts/${k}').remove()">X</button><div class="post-meta">${p.date} | ${p.author}</div><h2>${p.title}</h2><p>${p.body}</p>${p.img ? `<img src="${p.img}" style="max-width:100%">`:''}</div>`;
+            });
+        });
     }
 
-    // 2. ИНИЦИАЛИЗАЦИЯ ПОСЛЕ ЗАГРУЗКИ СКРИПТОВ
-    window.onload = function() {
-        // Проверка наличия Firebase в системе
-        if (typeof firebase === 'undefined') {
-            alert("Ошибка загрузки Firebase. Проверьте интернет или VPN.");
-            return;
-        }
+    function setForumCat(c) { loadForum(c); }
+    function sendForum() {
+        let m = document.getElementById('f-msg').value;
+        let cat = document.getElementById('f-btn-flud').classList.contains('active') ? 'flud' : 'zalaz';
+        if(m) { db.ref('forum/' + cat).push({ msg: m, author: userNick, date: new Date().toLocaleString() }); addXP(5); document.getElementById('f-msg').value = ''; }
+    }
 
-        // Инициализация Firebase
-        const firebaseConfig = {
-            databaseURL: "https://orskdigg-default-rtdb.europe-west1.firebasedatabase.app"
-        };
-        firebase.initializeApp(firebaseConfig);
-        database = firebase.database();
-
-        // Инициализация Карты
-        map = L.map('map').setView([51.23, 58.47], 12);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-
-        // Загрузка меток
-        database.ref('markers').on('child_added', (snap) => {
-            const d = snap.val();
-            L.marker([d.lat, d.lng]).addTo(map).bindPopup(`<b>Объект:</b><br>${d.note}`);
+    function loadForum(cat) {
+        document.getElementById('f-btn-flud').className = (cat==='flud'?'active':'');
+        document.getElementById('f-btn-zalaz').className = (cat==='zalaz'?'active':'');
+        db.ref('forum/' + cat).on('value', s => {
+            let f = document.getElementById('forum-feed'); f.innerHTML = '';
+            let d = s.val();
+            if(d) Object.keys(d).reverse().forEach(k => {
+                let m = d[k]; f.innerHTML += `<div class="forum-msg"><div class="post-meta">${m.date} | ${m.author}</div><div>${m.msg}</div></div>`;
+            });
         });
+    }
 
-        map.on('click', (e) => {
-            const note = prompt("Название объекта:");
-            if (note) database.ref('markers').push({ lat: e.latlng.lat, lng: e.latlng.lng, note: note });
-        });
+    function saveWiki() {
+        let o = document.getElementById('w-obj').value, d = document.getElementById('w-desc').value;
+        if(o && d) { db.ref('wiki/' + o).set({ desc: d, img: document.getElementById('w-img').value, author: userNick, date: new Date().toLocaleString() }); addXP(15); }
+    }
 
-        // Слушатель постов
-        database.ref('posts').on('value', (snapshot) => {
-            const feed = document.getElementById('feed');
-            feed.innerHTML = '';
-            const data = snapshot.val();
-            if (data) {
-                Object.keys(data).reverse().forEach(key => {
-                    const p = data[key];
-                    const imgTag = (p.img && p.img.length > 5) ? `<img src="${p.img}" onerror="this.style.display='none'">` : '';
-                    const card = document.createElement('div');
-                    card.className = 'post-card';
-                    card.innerHTML = `
-                        <button class="btn-delete" onclick="deletePost('${key}')">УДАЛИТЬ</button>
-                        <h2>${p.title}</h2>
-                        <div class="date">${p.date}</div>
-                        <p>${p.body}</p>
-                        ${imgTag}
-                    `;
-                    feed.appendChild(card);
-                });
-            } else {
-                feed.innerHTML = '<p style="text-align:center; color:#555;">АРХИВ ПУСТ</p>';
-            }
+    function loadWiki() {
+        db.ref('wiki').on('value', s => {
+            let f = document.getElementById('wiki-feed'); f.innerHTML = '<h2>АРХИВ ОБЪЕКТОВ</h2>';
+            let d = s.val();
+            if(d) Object.keys(d).forEach(k => {
+                let w = d[k]; f.innerHTML += `<div class="post-card"><h2>${k}</h2><p>${w.desc}</p>${w.img ? `<img src="${w.img}" style="max-width:100%">`:''}</div>`;
+            });
         });
-        
-        // Финальный фикс размера карты
-        setTimeout(() => map.invalidateSize(), 500);
-    };
+    }
+
+    function changeNick() { if(confirm("Сменить ник?")) { localStorage.removeItem('digger_nick'); location.reload(); } }
 </script>
 </body>
 </html>
