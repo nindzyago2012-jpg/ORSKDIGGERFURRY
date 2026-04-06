@@ -3,21 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orsk Digger Project | Swag Team</title>
+    <title>Orsk Digger Project | Swag Team (Standalone)</title>
     <link rel="icon" type="image/png" href="assets/logo.png">
     
-    <!-- ПОДКЛЮЧЕНИЕ БИБЛИОТЕК (Версии для браузера) -->
-    <link rel="stylesheet" href="https://unpkg.com" />
-    <script src="https://gstatic.com"></script>
-    <script src="https://gstatic.com"></script>
-    <script src="https://unpkg.com"></script>
-
     <style>
         :root { --y: #ffcc00; --b: #0a0a0a; --g: #1a1a1a; --text: #e0e0e0; --accent: #ffcc00; }
         [data-theme="bw"] { --y: #ffffff; --b: #000000; --g: #111111; --text: #ffffff; --accent: #888888; }
         [data-theme="boykisser"] { --y: #ff80ab; --b: #fff0f6; --g: #ffffff; --text: #880e4f; --accent: #f06292; }
 
-        body { background: var(--b); color: var(--text); font-family: 'Courier New', monospace; margin: 0; transition: 0.3s; display: flex; flex-direction: column; min-height: 100vh; }
+        body { background: var(--b); color: var(--text); font-family: 'Courier New', monospace; margin: 0; transition: 0.3s; display: flex; flex-direction: column; min-height: 100vh; overflow-x: hidden; }
         .container { max-width: 1200px; width: 90%; margin: 0 auto; padding: 20px 0; flex: 1; }
         
         header { background: var(--y); color: var(--b); padding: 50px 0; text-align: center; border-bottom: 8px solid var(--accent); }
@@ -25,50 +19,47 @@
         .logo-img:active { transform: scale(1.1); }
         header h1 { margin: 0; font-size: 38px; letter-spacing: 5px; text-transform: uppercase; font-weight: 900; }
         
-        .team-desc { max-width: 750px; margin: 15px auto 0; font-size: 14px; line-height: 1.6; font-weight: bold; background: rgba(0,0,0,0.1); padding: 15px; border-radius: 5px; }
-        .lvl-box { margin-top: 25px; background: rgba(0,0,0,0.5); display: inline-block; padding: 15px 30px; border: 2px solid var(--b); }
-        .xp-bar { width: 250px; height: 12px; background: #333; display: inline-block; border: 1px solid var(--b); position: relative; }
+        .lvl-box { margin-top: 25px; background: rgba(0,0,0,0.5); display: inline-block; padding: 15px 30px; border: 2px solid var(--b); min-width: 320px; }
+        .xp-bar { width: 100%; height: 12px; background: #333; display: block; border: 1px solid var(--b); margin-top: 10px; position: relative; }
         #xp-fill { height: 100%; background: var(--b); width: 0%; transition: 1s ease-in-out; }
 
         nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 30px 0; }
-        nav button, nav select { background: var(--g); border: 2px solid var(--y); color: var(--y); padding: 12px 18px; cursor: pointer; font-weight: bold; font-family: inherit; }
+        nav button, nav select { background: var(--g); border: 2px solid var(--y); color: var(--y); padding: 12px 18px; cursor: pointer; font-weight: bold; font-family: inherit; transition: 0.2s; }
         nav button.active { background: var(--y); color: var(--b); }
 
-        .sub-nav { display: flex; gap: 10px; margin-bottom: 20px; }
-        .sub-nav button { flex: 1; padding: 15px; background: var(--g); color: var(--y); border: 3px solid var(--y); box-shadow: 4px 4px 0px var(--y); font-weight: bold; cursor: pointer; }
-        .sub-nav button.active { background: var(--y); color: var(--b); transform: translate(2px, 2px); box-shadow: 0px 0px 0px var(--y); }
+        .sub-nav { display: flex; gap: 15px; margin-bottom: 25px; }
+        .sub-nav button { flex: 1; padding: 18px; background: var(--g); color: var(--y); border: 3px solid var(--y); box-shadow: 5px 5px 0px var(--y); font-weight: 900; cursor: pointer; text-transform: uppercase; transition: 0.1s; }
+        .sub-nav button.active { background: var(--y); color: var(--b); transform: translate(4px, 4px); box-shadow: 0px 0px 0px var(--y); }
 
-        .page { display: none; min-height: 600px; }
+        .page { display: none; min-height: 600px; animation: fadeIn 0.4s; }
         .page.active { display: block; }
-        #map { height: 600px; width: 100%; border: 4px solid var(--y); background: #000; cursor: crosshair; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* КАРТА */
+        #map-window { width: 100%; height: 600px; border: 4px solid var(--y); background: #000; overflow: auto; position: relative; }
+        #map-area { position: relative; display: inline-block; min-width: 100%; transition: width 0.2s; }
+        #map-img { display: block; width: 100%; cursor: crosshair; }
+        .marker { position: absolute; width: 22px; height: 22px; background: var(--y); border: 2px solid #000; transform: translate(-50%, -50%) rotate(45deg); cursor: pointer; z-index: 10; box-shadow: 0 0 10px #000; }
+
+        .form-section { background: var(--g); padding: 30px; border: 3px solid var(--y); margin-bottom: 30px; }
+        input, textarea { width: 100%; padding: 15px; margin: 10px 0; background: var(--b); border: 1px solid var(--y); color: var(--text); font-family: inherit; box-sizing: border-box; font-size: 16px; }
+        .btn-send { background: var(--y); color: var(--b); border: none; padding: 20px; width: 100%; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 18px; border: 2px solid var(--b); }
+
+        .post-card { background: var(--g); padding: 25px; margin-bottom: 20px; border-left: 10px solid var(--y); position: relative; box-shadow: 5px 5px 15px rgba(0,0,0,0.5); }
+        .btn-jump { background: var(--y); color: #000; border: none; padding: 10px; font-weight: 900; cursor: pointer; margin-top: 15px; display: inline-block; font-size: 12px; }
         
-        .form-section { background: var(--g); padding: 25px; border: 2px solid var(--y); margin-bottom: 30px; }
-        input, textarea { width: 100%; padding: 12px; margin: 8px 0; background: var(--b); border: 1px solid var(--y); color: var(--text); font-family: inherit; box-sizing: border-box; }
-        .btn-send { background: var(--y); color: var(--b); border: none; padding: 18px; width: 100%; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        
-        .post-card { background: var(--g); padding: 25px; margin-bottom: 20px; border-left: 10px solid var(--y); position: relative; }
-        .post-meta { color: var(--y); font-size: 12px; margin-bottom: 10px; font-weight: bold; }
-        .post-card img { max-width: 100%; margin-top: 15px; border: 2px solid var(--y); }
-        .btn-delete { position: absolute; top: 10px; right: 10px; background: #c00; color: #fff; border: none; padding: 5px; cursor: pointer; font-size: 10px; }
-        
-        footer { background: var(--b); color: var(--y); text-align: center; padding: 30px; border-top: 4px solid var(--y); margin-top: 50px; font-weight: 900; text-transform: uppercase; }
-        .leaflet-popup-content button { background: var(--y); color: #000; border: none; padding: 5px; margin-top: 5px; width: 100%; cursor: pointer; font-family: inherit; font-weight: bold; }
+        footer { background: var(--b); color: var(--y); text-align: center; padding: 35px; border-top: 5px solid var(--y); margin-top: 50px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="assets/logo.png" id="main-logo" class="logo-img" onclick="playMeow()" onerror="this.src='https://placeholder.com'">
+    <img src="assets/logo.png" id="main-logo" class="logo-img" onclick="playMeow()">
     <h1>ORSK DIGGER PROJECT</h1>
-    <div class="team-desc">
-        Форум диггеров из команды Swag Team. Исследуем забытые тоннели Орска. И помни: настоящий диггер не оставляет следов, а секреты подземелий не терпят суеты.
-    </div>
     <div class="lvl-box">
         <span id="lvl-text" style="font-size: 18px; font-weight: bold;">Статус: Школьник</span>
-        <div style="margin-top: 8px;">
-            <div class="xp-bar"><div id="xp-fill"></div></div>
-            <div id="xp-text" style="font-size: 13px; font-weight: bold;">0 XP</div>
-        </div>
+        <div class="xp-bar"><div id="xp-fill"></div></div>
+        <div id="xp-text" style="font-size: 13px; font-weight: bold; margin-top: 5px;">0 / 50 XP</div>
     </div>
 </header>
 
@@ -78,31 +69,48 @@
         <button onclick="switchTab('blog-page')" id="nav-blog-page">АРХИВ</button>
         <button onclick="switchTab('forum-page')" id="nav-forum-page">ФОРУМ</button>
         <button onclick="switchTab('wiki-page')" id="nav-wiki-page">ВИКИ</button>
-        <select id="theme-select" onchange="changeTheme(this.value)">
-            <option value="default">☢ ТЕМА: СТАНДАРТ</option>
-            <option value="bw">⬚ ТЕМА: ЧБ</option>
-            <option value="boykisser">✿ ТЕМА: BOYKISSER :3</option>
+        <button onclick="renderProfile(); switchTab('profile-page')" id="nav-profile-page">ПРОФИЛЬ</button>
+        <select onchange="changeTheme(this.value)">
+            <option value="default">🌐 СТАНДАРТ</option>
+            <option value="bw">☢ МОНОХРОМ</option>
+            <option value="boykisser">✿ BOYKISSER :3</option>
         </select>
-        <button onclick="changeNick()">[ <span id="current-nick">Ник...</span> ]</button>
     </nav>
 
     <!-- КАРТА -->
     <div id="map-page" class="page active">
         <div class="sub-nav">
-            <button onclick="setMapFile('MapOsn.JPG')" id="m-btn-osn" class="active">ОСНОВНАЯ КАРТА</button>
-            <button onclick="setMapFile('MapLenkom.PNG')" id="m-btn-lenkom">ЛЕНКОМ</button>
+            <button onclick="setMap('maposn.jpg')" id="m-btn-osn" class="active">ОСНОВНАЯ</button>
+            <button onclick="setMap('maplenkom.png')" id="m-btn-lenkom">ЛЕНКОМ</button>
         </div>
-        <div id="map"></div>
-        <p style="color:var(--y); text-align:center; font-size: 11px; margin-top: 10px;">[ ЗУМ КОЛЕСИКОМ. КЛИК — СОЗДАТЬ ЗАМЕТКУ ]</p>
+        <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 15px;">
+            <span style="color:var(--y); font-weight:bold;">ЗУМ:</span>
+            <input type="range" min="100" max="500" value="100" oninput="zoomMap(this.value)" style="flex:1;">
+        </div>
+        <div id="map-window">
+            <div id="map-area">
+                <img src="assets/maposn.jpg" id="map-img" onclick="addMarker(event)">
+                <div id="markers-layer" style="position: absolute; top:0; left:0; width:100%; height:100%; pointer-events: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ПРОФИЛЬ -->
+    <div id="profile-page" class="page">
+        <div class="form-section">
+            <h2 style="color: var(--y); border-bottom: 2px solid var(--y); margin-top:0;">ЛИЧНОЕ ДЕЛО ДИГГЕРА</h2>
+            <div id="profile-stats" style="font-size: 18px; line-height: 2;"></div>
+            <button class="btn-send" style="margin-top: 20px; width: auto; padding: 10px 25px;" onclick="switchTab('map-page')">НАЗАД</button>
+            <button class="btn-send" style="margin-top: 20px; width: auto; background: #500; color: #fff;" onclick="resetData()">СБРОСИТЬ ВСЁ</button>
+        </div>
     </div>
 
     <!-- АРХИВ -->
     <div id="blog-page" class="page">
         <div class="form-section">
-            <input type="text" id="t-title" placeholder="ОБЪЕКТ">
-            <textarea id="t-body" rows="3" placeholder="ТВОЙ ОТЧЕТ..."></textarea>
-            <input type="text" id="t-img" placeholder="ССЫЛКА НА ФОТО">
-            <button class="btn-send" onclick="sendPost()">ОПУБЛИКОВАТЬ (+10 XP)</button>
+            <input type="text" id="t-title" placeholder="НАЗВАНИЕ ОБЪЕКТА">
+            <textarea id="t-body" rows="3" placeholder="ОТЧЕТ..."></textarea>
+            <button class="btn-send" onclick="sendPost()">ВНЕСТИ В АРХИВ (+10 XP)</button>
         </div>
         <div id="feed"></div>
     </div>
@@ -110,8 +118,8 @@
     <!-- ФОРУМ -->
     <div id="forum-page" class="page">
         <div class="sub-nav">
-            <button onclick="setForumCat('flud')" id="f-btn-flud" class="active">ФЛУДИЛКА</button>
-            <button onclick="setForumCat('zalaz')" id="f-btn-zalaz">ОБСУЖДЕНИЕ</button>
+            <button onclick="setForum('flud')" id="f-btn-flud" class="active">ФЛУДИЛКА</button>
+            <button onclick="setForum('zalaz')" id="f-btn-zalaz">ОБСУЖДЕНИЕ</button>
         </div>
         <div class="form-section">
             <textarea id="f-msg" rows="2" placeholder="СООБЩЕНИЕ..."></textarea>
@@ -123,9 +131,8 @@
     <!-- ВИКИ -->
     <div id="wiki-page" class="page">
         <div class="form-section">
-            <input type="text" id="w-obj" placeholder="ИМЯ ОБЪЕКТА ДЛЯ ПОИСКА С КАРТЫ">
-            <textarea id="w-desc" rows="4" placeholder="ОПИСАНИЕ..."></textarea>
-            <input type="text" id="w-img" placeholder="ССЫЛКА НА ФОТО">
+            <input type="text" id="w-obj" placeholder="ИМЯ ОБЪЕКТА">
+            <textarea id="w-desc" rows="4" placeholder="ИСТОРИЯ, СОСТОЯНИЕ..."></textarea>
             <button class="btn-send" onclick="saveWiki()">ОБНОВИТЬ ВИКИ (+15 XP)</button>
         </div>
         <div id="wiki-feed"></div>
@@ -135,189 +142,192 @@
 <footer>КТО ЗАДУДОСИТ ЭТОТ САЙТ ТОТ ПИДОРАС</footer>
 
 <script>
-    // --- ИНТЕГРАЦИЯ FIREBASE CONFIG ---
-    const firebaseConfig = {
-        apiKey: "AIzaSyBHxialxBDWHfz4mEdg_2eOoIxomnu_hQU",
-        authDomain: "://firebaseapp.com",
-        databaseURL: "https://firebasedatabase.app",
-        projectId: "orskdigg",
-        storageBucket: "orskdigg.firebasestorage.app",
-        messagingSenderId: "223291146501",
-        appId: "1:223291146501:web:a6b90320c21ff163b7376c"
-    };
-
-    let db, map, imgOverlay;
-    let userNick = localStorage.getItem('digger_nick');
-    let userXP = 0;
-    let currentMapFile = 'MapOsn.JPG';
-    let markersList = {};
+    let userNick, userXP = 0, currentMapFile = 'maposn.jpg', currentForumCat = 'flud', lastAction = 0;
+    let tempCoord = null;
 
     window.onload = function() {
+        userNick = localStorage.getItem('digger_nick');
         if (!userNick) {
-            let n = prompt("КТО ТЫ, ВОИН? Введи свой позывной:");
-            if(n) { localStorage.setItem('digger_nick', n); location.reload(); }
-        } else {
-            initApp();
-        }
+            let n = prompt("ТВОЙ ПОЗЫВНОЙ:");
+            if (n) { 
+                localStorage.setItem('digger_nick', n.trim()); 
+                localStorage.setItem('reg_date', new Date().toLocaleDateString());
+                localStorage.setItem('digger_xp', '0');
+                location.reload(); 
+            }
+        } else { initApp(); }
     };
 
     function initApp() {
-        document.getElementById('current-nick').innerText = userNick;
+        setMap(currentMapFile);
+        loadBlog(); loadForum('flud'); loadWiki();
+        updateLVLUI();
         changeTheme(localStorage.getItem('site_theme') || 'default');
-        
-        // Инициализация Firebase (v8 синтаксис)
-        firebase.initializeApp(firebaseConfig);
-        db = firebase.database();
-
-        initMapEngine(); loadBlog(); loadForum('flud'); loadWiki(); syncXP();
     }
 
-    function playMeow() { new Audio('assets/meow.mp3').play().catch(()=>{}); }
+    function checkCD() {
+        const now = Date.now();
+        if (now - lastAction < 5000) { alert(`☢ ПАУЗА ${Math.ceil((5000-(now-lastAction))/1000)} сек!`); return false; }
+        lastAction = now; return true;
+    }
 
-    // --- ДВИЖОК КАРТЫ ---
-    function initMapEngine() {
-        map = L.map('map', { crs: L.CRS.Simple, minZoom: -3, maxZoom: 3, attributionControl: false });
-        setMapFile(currentMapFile);
+    // --- ВСПОМОГАТЕЛЬНЫЕ ---
+    function getStore(k) { return JSON.parse(localStorage.getItem(k) || "[]"); }
+    function setStore(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+    function addXP(v) { 
+        userXP = parseInt(localStorage.getItem('digger_xp') || "0") + v;
+        localStorage.setItem('digger_xp', userXP);
+        updateLVLUI();
+    }
 
-        map.on('click', (e) => {
-            const note = prompt("Название объекта:");
-            if(!note) return;
-            const wiki = prompt("Название статьи в Вики (если есть):", "");
-            const path = currentMapFile.replace('.', '_');
-            db.ref('markers/' + path).push({ lat: e.latlng.lat, lng: e.latlng.lng, note, wiki, author: userNick });
-            addXP(5);
+    function updateLVLUI() {
+        userXP = parseInt(localStorage.getItem('digger_xp') || "0");
+        const ranks = [
+            {name: "Школьник", min: 0, max: 50},
+            {name: "Дренажная Крыса", min: 50, max: 150},
+            {name: "Лазальщик", min: 150, max: 400},
+            {name: "Диггер", min: 400, max: 1000},
+            {name: "Крутэлык", min: 1000, max: 1000}
+        ];
+        let r = ranks[0];
+        for(let i=ranks.length-1; i>=0; i--) { if(userXP >= ranks[i].min) { r = ranks[i]; break; } }
+
+        document.getElementById('lvl-text').innerText = "Статус: " + r.name;
+        if(r.name === "Крутэлык") {
+            document.getElementById('xp-text').innerText = "МАКСИМУМ ДОСТИГНУТ";
+            document.getElementById('xp-fill').style.width = "100%";
+        } else {
+            let progress = ((userXP - r.min) / (r.max - r.min)) * 100;
+            document.getElementById('xp-text').innerText = `${userXP - r.min} / ${r.max - r.min} XP`;
+            document.getElementById('xp-fill').style.width = progress + "%";
+        }
+    }
+
+    // --- КАРТА ---
+    function setMap(f) {
+        currentMapFile = f;
+        document.getElementById('map-img').src = 'assets/' + f;
+        document.getElementById('m-btn-osn').className = f.includes('osn') ? 'active' : '';
+        document.getElementById('m-btn-lenkom').className = f.includes('lenkom') ? 'active' : '';
+        renderMarkers();
+    }
+
+    function zoomMap(v) { document.getElementById('map-area').style.width = v + "%"; }
+
+    function addMarker(e) {
+        if(!checkCD()) return;
+        const rect = e.target.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100, y = ((e.clientY - rect.top) / rect.height) * 100;
+        const note = prompt("Название объекта:");
+        if(note) {
+            let m = getStore('markers_' + currentMapFile);
+            m.push({ x, y, note, id: Date.now() });
+            setStore('markers_' + currentMapFile, m);
+            addXP(5); renderMarkers();
+            if(confirm("Создать статью в Вики для этого объекта?")) {
+                tempCoord = { x, y, f: currentMapFile };
+                document.getElementById('w-obj').value = note;
+                switchTab('wiki-page');
+            }
+        }
+    }
+
+    function renderMarkers() {
+        const layer = document.getElementById('markers-layer'); layer.innerHTML = '';
+        getStore('markers_' + currentMapFile).forEach(m => {
+            const el = document.createElement('div'); el.className = 'marker'; el.style.left = m.x + "%"; el.style.top = m.y + "%";
+            el.onclick = (e) => { e.stopPropagation(); if(confirm("Удалить метку " + m.note + "?")) {
+                setStore('markers_'+currentMapFile, getStore('markers_'+currentMapFile).filter(i => i.id !== m.id)); renderMarkers();
+            }};
+            layer.appendChild(el);
         });
     }
 
-    function setMapFile(file) {
-        currentMapFile = file;
-        document.getElementById('m-btn-osn').className = (file === 'MapOsn.JPG' ? 'active' : '');
-        document.getElementById('m-btn-lenkom').className = (file === 'MapLenkom.PNG' ? 'active' : '');
-        
-        if (imgOverlay) map.removeLayer(imgOverlay);
-        Object.values(markersList).forEach(m => map.removeLayer(m));
-        markersList = {};
-
-        const img = new Image();
-        img.src = 'assets/' + file;
-        img.onload = function() {
-            const w = this.width, h = this.height;
-            const bounds = [, [h, w]];
-            imgOverlay = L.imageOverlay(img.src, bounds).addTo(map);
-            map.fitBounds(bounds);
-            loadMarkers(file);
+    // --- ПРОФИЛЬ ---
+    function renderProfile() {
+        const stats = {
+            posts: getStore('posts').length,
+            forum: getStore('forum_flud').length + getStore('forum_zalaz').length,
+            wiki: getStore('wiki').length,
+            date: localStorage.getItem('reg_date') || "Давно"
         };
+        document.getElementById('profile-stats').innerHTML = `
+            <strong>НИК:</strong> ${userNick}<br>
+            <strong>ОБЩИЙ ОПЫТ:</strong> ${userXP} XP<br>
+            <strong>В КОМАНДЕ С:</strong> ${stats.date}<br>
+            <strong>ОТЧЕТОВ:</strong> ${stats.posts}<br>
+            <strong>СООБЩЕНИЙ:</strong> ${stats.forum}<br>
+            <strong>СТАТЕЙ ВИКИ:</strong> ${stats.wiki}<br>
+            <strong>СТАТУС:</strong> <span style="color:#0f0">ОНЛАЙН (ЛОКАЛЬНО)</span>
+        `;
     }
 
-    function loadMarkers(file) {
-        const path = file.replace('.', '_');
-        db.ref('markers/' + path).off();
-        db.ref('markers/' + path).on('value', (snap) => {
-            Object.values(markersList).forEach(m => map.removeLayer(m));
-            markersList = {};
-            const data = snap.val();
-            if(!data) return;
-            Object.keys(data).forEach(id => {
-                const d = data[id];
-                const marker = L.marker([d.lat, d.lng]).addTo(map);
-                let html = `<b>${d.note}</b><br><small>Автор: ${d.author}</small>`;
-                if(d.wiki) html += `<br><button onclick="switchTab('wiki-page')">📖 В ВИКИ</button>`;
-                if(d.author === userNick) {
-                    html += `<br><button onclick="editM('${id}','${d.note}')">✏️ ПРАВИТЬ</button>`;
-                    html += `<button style="background:#500;color:#fff" onclick="delM('${id}')">🗑 УДАЛИТЬ</button>`;
-                }
-                marker.bindPopup(html);
-                markersList[id] = marker;
-            });
-        });
-    }
-
-    function delM(id) { if(confirm("Удалить?")) db.ref('markers/'+currentMapFile.replace('.','_')+'/'+id).remove(); }
-    function editM(id, old) { 
-        let n = prompt("Новое имя:", old); 
-        if(n) db.ref('markers/'+currentMapFile.replace('.','_')+'/'+id).update({note: n}); 
-    }
-
-    // --- ФУНКЦИИ XP ---
-    function syncXP() { db.ref('users/' + userNick).on('value', s => { userXP = s.val() || 0; updateLVL(); }); }
-    function addXP(v) { db.ref('users/' + userNick).set(userXP + v); }
-    function updateLVL() {
-        let lvl = "Школьник", next = 50;
-        if (userXP >= 1000) { lvl = "Крутэлык"; next = userXP; }
-        else if (userXP >= 400) { lvl = "Диггер"; next = 1000; }
-        else if (userXP >= 150) { lvl = "Лазальщик"; next = 400; }
-        else if (userXP >= 50) { lvl = "Дренажная Крыса"; next = 150; }
-        document.getElementById('lvl-text').innerText = "Статус: " + lvl;
-        document.getElementById('xp-text').innerText = `${userXP}/${next} XP`;
-        document.getElementById('xp-fill').style.width = (userXP >= 1000 ? 100 : (userXP/next*100)) + "%";
-        if(lvl === "Крутэлык") document.getElementById('lvl-text').style.color = "red";
-    }
-
-    // --- ОБЩАЯ ЛОГИКА ---
-    function switchTab(id) {
-        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        document.getElementById('nav-'+id).classList.add('active');
-        if(id === 'map-page' && map) setTimeout(() => map.invalidateSize(), 100);
-    }
-
-    function changeTheme(t) {
-        t === 'default' ? document.documentElement.removeAttribute('data-theme') : document.documentElement.setAttribute('data-theme', t);
-        localStorage.setItem('site_theme', t);
-    }
-
+    // --- СЕКЦИИ ---
     function sendPost() {
         const t = document.getElementById('t-title').value, b = document.getElementById('t-body').value;
-        if(t && b) { db.ref('posts').push({ title: t, body: b, img: document.getElementById('t-img').value, author: userNick, date: new Date().toLocaleString() }); addXP(10); }
+        if(t && b && checkCD()) {
+            let p = getStore('posts'); p.unshift({t, b, d: new Date().toLocaleString()});
+            setStore('posts', p); addXP(10); loadBlog();
+        }
     }
-
     function loadBlog() {
-        db.ref('posts').on('value', s => {
-            const feed = document.getElementById('feed'); feed.innerHTML = '';
-            const data = s.val();
-            if(data) Object.keys(data).reverse().forEach(k => {
-                const p = data[k];
-                feed.innerHTML += `<div class="post-card"><button class="btn-delete" onclick="db.ref('posts/${k}').remove()">X</button><div class="post-meta">${p.date} | ${p.author}</div><h2>${p.title}</h2><p>${p.body}</p>${p.img ? `<img src="${p.img}">` : ''}</div>`;
-            });
-        });
+        const f = document.getElementById('feed'); f.innerHTML = '';
+        getStore('posts').forEach(p => { f.innerHTML += `<div class="post-card"><h2>${p.t}</h2><p>${p.b}</p><small>${p.d}</small></div>`; });
     }
 
-    function setForumCat(c) { loadForum(c); }
-    function loadForum(cat) {
-        document.getElementById('f-btn-flud').className = (cat==='flud'?'active':'');
-        document.getElementById('f-btn-zalaz').className = (cat==='zalaz'?'active':'');
-        db.ref('forum/' + cat).on('value', s => {
-            const f = document.getElementById('forum-feed'); f.innerHTML = '';
-            const data = s.val();
-            if(data) Object.keys(data).reverse().forEach(k => {
-                const m = data[k]; f.innerHTML += `<div class="forum-msg"><div class="post-meta">${m.date} | ${m.author}</div><div>${m.msg}</div></div>`;
-            });
-        });
+    function setForum(c) { currentForumCat = c; loadForum(c); }
+    function loadForum(c) {
+        document.getElementById('f-btn-flud').className = c==='flud'?'active':'';
+        document.getElementById('f-btn-zalaz').className = c==='zalaz'?'active':'';
+        const f = document.getElementById('forum-feed'); f.innerHTML = '';
+        getStore('forum_'+c).forEach(m => { f.innerHTML += `<div style="padding:10px; border-bottom:1px solid var(--y)"><b>${userNick}:</b> ${m.msg}</div>`; });
     }
-
     function sendForum() {
         const m = document.getElementById('f-msg').value;
-        const cat = document.getElementById('f-btn-flud').classList.contains('active') ? 'flud' : 'zalaz';
-        if(m) { db.ref('forum/' + cat).push({ msg: m, author: userNick, date: new Date().toLocaleString() }); addXP(5); document.getElementById('f-msg').value = ''; }
+        if(m && checkCD()) {
+            let ms = getStore('forum_'+currentForumCat); ms.unshift({msg:m});
+            setStore('forum_'+currentForumCat, ms); addXP(5); loadForum(currentForumCat);
+            document.getElementById('f-msg').value = '';
+        }
     }
 
     function saveWiki() {
         const o = document.getElementById('w-obj').value, d = document.getElementById('w-desc').value;
-        if(o && d) { db.ref('wiki/' + o).set({ desc: d, img: document.getElementById('w-img').value, author: userNick, date: new Date().toLocaleString() }); addXP(15); }
+        if(o && d && checkCD()) {
+            let w = getStore('wiki');
+            const data = { o, d, id: Date.now() };
+            if(tempCoord) { data.mX = tempCoord.x; data.mY = tempCoord.y; data.mF = tempCoord.f; }
+            w.push(data); setStore('wiki', w); addXP(15); loadWiki();
+            tempCoord = null; document.getElementById('w-obj').value = ''; document.getElementById('w-desc').value = '';
+        }
     }
-
     function loadWiki() {
-        db.ref('wiki').on('value', s => {
-            const f = document.getElementById('wiki-feed'); f.innerHTML = '<h2>АРХИВ ОБЪЕКТОВ</h2>';
-            const data = s.val();
-            if(data) Object.keys(data).forEach(k => {
-                const w = data[k]; f.innerHTML += `<div class="post-card"><h2>${k}</h2><p>${w.desc}</p>${w.img ? `<img src="${w.img}">` : ''}</div>`;
-            });
+        const f = document.getElementById('wiki-feed'); f.innerHTML = '';
+        getStore('wiki').forEach(w => {
+            let btn = w.mF ? `<button class="btn-jump" onclick="jumpToMap('${w.mF}', ${w.mX}, ${w.mY})">📍 ПОКАЗАТЬ НА КАРТЕ</button>` : '';
+            f.innerHTML += `<div class="post-card"><h2>${w.o}</h2><p>${w.d}</p>${btn}</div>`;
         });
     }
 
-    function changeNick() { if(confirm("Сменить ник?")) { localStorage.removeItem('digger_nick'); location.reload(); } }
+    function jumpToMap(f, x, y) {
+        switchTab('map-page'); setMap(f);
+        setTimeout(() => {
+            const win = document.getElementById('map-window'); const img = document.getElementById('map-img');
+            win.scrollLeft = (img.clientWidth * (x/100)) - (win.clientWidth/2);
+            win.scrollTop = (img.clientHeight * (y/100)) - (win.clientHeight/2);
+        }, 300);
+    }
+
+    // --- СИСТЕМНОЕ ---
+    function switchTab(id) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if(document.getElementById('nav-'+id)) document.getElementById('nav-'+id).classList.add('active');
+    }
+    function playMeow() { new Audio('assets/meow.mp3').play().catch(()=>{}); }
+    function changeTheme(t) { document.documentElement.setAttribute('data-theme', t); localStorage.setItem('site_theme', t); }
+    function resetData() { if(confirm("ЭТО УДАЛИТ ВСЕ ТВОИ ЗАПИСИ. УВЕРЕН?")) { localStorage.clear(); location.reload(); } }
 </script>
 </body>
 </html>
