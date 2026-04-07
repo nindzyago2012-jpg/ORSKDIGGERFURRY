@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Orsk Digger Project | Swag team</title>
+    <title>Orsk Digger Project | Online</title>
     <link rel="icon" type="image/png" href="assets/logo.png">
-    <!-- Подключаем библиотеку Supabase -->
-    <script src="https://jsdelivr.net"></script>
+    
+    <!-- Подключаем локальный файл библиотеки (скачай его и положи рядом!) -->
+    <script src="supabase.js"></script>
     
     <style>
         :root { --y: #ffcc00; --b: #0a0a0a; --g: #1a1a1a; --text: #e0e0e0; --accent: #ffcc00; }
@@ -58,7 +59,7 @@
     <img src="assets/logo.png" id="main-logo" class="logo-img" onclick="playMeow()">
     <h1>ORSK DIGGER PROJECT</h1>
     <div class="lvl-box">
-        <span id="lvl-text" style="font-size: 18px; font-weight: bold;">Загрузка...</span>
+        <span id="lvl-text" style="font-size: 18px; font-weight: bold;">Связь...</span>
         <div class="xp-bar"><div id="xp-fill"></div></div>
         <div id="xp-text" style="font-size: 13px; font-weight: bold; margin-top: 5px;">0 XP</div>
     </div>
@@ -78,7 +79,6 @@
         </select>
     </nav>
 
-    <!-- КАРТА -->
     <div id="map-page" class="page active">
         <div class="sub-nav">
             <button onclick="setMap('maposn.jpg')" id="m-btn-osn" class="active">ОСНОВНАЯ</button>
@@ -96,7 +96,6 @@
         </div>
     </div>
 
-    <!-- АРХИВ -->
     <div id="blog-page" class="page">
         <div class="form-section">
             <input type="text" id="t-title" placeholder="НАЗВАНИЕ ОБЪЕКТА">
@@ -106,7 +105,6 @@
         <div id="feed"></div>
     </div>
 
-    <!-- ФОРУМ -->
     <div id="forum-page" class="page">
         <div class="sub-nav">
             <button onclick="loadForum('flud')" id="f-btn-flud" class="active">ФЛУДИЛКА</button>
@@ -119,7 +117,6 @@
         <div id="forum-feed"></div>
     </div>
 
-    <!-- ВИКИ -->
     <div id="wiki-page" class="page">
         <div class="form-section">
             <input type="text" id="w-obj" placeholder="ИМЯ ОБЪЕКТА">
@@ -129,7 +126,6 @@
         <div id="wiki-feed"></div>
     </div>
 
-    <!-- ПРОФИЛЬ -->
     <div id="profile-page" class="page">
         <div class="form-section">
             <h2 style="color: var(--y); border-bottom: 2px solid var(--y); margin-top:0;">ЛИЧНОЕ ДЕЛО ДИГГЕРА</h2>
@@ -142,10 +138,18 @@
 <footer>КТО ЗАДУДОСИТ ЭТОТ САЙТ ТОТ ПИДОРАС</footer>
 
 <script>
-    // --- КОНФИГУРАЦИЯ SUPABASE ---
+    // --- ИНИЦИАЛИЗАЦИЯ SUPABASE ---
     const SUB_URL = 'https://supabase.co';
     const SUB_KEY = 'sb_publishable_TMgSn4UaJ1bovISkRi5ifA_8BrIdZCA';
-    const supabase = document.supabase ? document.supabase : window.supabase.createClient(SUB_URL, SUB_KEY);
+    
+    let db;
+    try {
+        // Пытаемся создать клиента через объект из локального файла supabase.js
+        db = window.supabase.createClient(SUB_URL, SUB_KEY);
+    } catch (e) {
+        console.error("Ошибка библиотеки!", e);
+        alert("Ошибка сети! Не удалось подключиться к базе данных.");
+    }
 
     let userNick, userXP = 0, currentMapFile = 'maposn.jpg', currentForumCat = 'flud', lastAction = 0;
     let tempCoord = null;
@@ -191,16 +195,15 @@
             {name: "Дренажная Крыса", min: 50, max: 150},
             {name: "Лазальщик", min: 150, max: 400},
             {name: "Диггер", min: 400, max: 1000},
-            {name: "Крутэлык", min: 1000, max: 99999}
+            {name: "Крутэлык", min: 1000, max: 999999}
         ];
-        let r = ranks.find((rank, i) => userXP >= rank.min && (ranks[i+1] ? userXP < ranks[i+1].min : true)) || ranks[0];
+        let r = ranks.find((rank, i) => userXP >= rank.min && (ranks[i+1] ? userXP < ranks[i+1].min : true)) || ranks;
         document.getElementById('lvl-text').innerText = "Статус: " + r.name;
         let progress = r.name === "Крутэлык" ? 100 : ((userXP - r.min) / (r.max - r.min)) * 100;
         document.getElementById('xp-fill').style.width = progress + "%";
         document.getElementById('xp-text').innerText = `${userXP} XP`;
     }
 
-    // --- КАРТА ---
     function setMap(f) {
         currentMapFile = f;
         document.getElementById('map-img').src = 'assets/' + f;
@@ -215,7 +218,7 @@
         const x = ((e.clientX - rect.left) / rect.width) * 100, y = ((e.clientY - rect.top) / rect.height) * 100;
         const note = prompt("Название объекта:");
         if(note) {
-            await supabase.from('markers').insert([{ note, x, y, map_file: currentMapFile }]);
+            await db.from('markers').insert([{ note, x, y, map_file: currentMapFile }]);
             addXP(5); renderMarkers();
             if(confirm("Создать статью в Вики для этого объекта?")) {
                 tempCoord = { x, y, f: currentMapFile };
@@ -226,7 +229,7 @@
     }
 
     async function renderMarkers() {
-        const { data: markers } = await supabase.from('markers').select('*').eq('map_file', currentMapFile);
+        const { data: markers } = await db.from('markers').select('*').eq('map_file', currentMapFile);
         const layer = document.getElementById('markers-layer'); layer.innerHTML = '';
         if(markers) markers.forEach(m => {
             const el = document.createElement('div'); el.className = 'marker'; 
@@ -236,18 +239,17 @@
         });
     }
 
-    // --- СЕКЦИИ ---
     async function sendPost() {
         const t = document.getElementById('t-title').value, b = document.getElementById('t-body').value;
         if(t && b && checkCD()) {
-            await supabase.from('posts').insert([{ t, b, nick: userNick }]);
+            await db.from('posts').insert([{ t, b, nick: userNick }]);
             addXP(10); loadBlog();
             document.getElementById('t-title').value = ''; document.getElementById('t-body').value = '';
         }
     }
 
     async function loadBlog() {
-        const { data } = await supabase.from('posts').select('*').order('id', { ascending: false });
+        const { data } = await db.from('posts').select('*').order('id', { ascending: false });
         const f = document.getElementById('feed'); f.innerHTML = '';
         if(data) data.forEach(p => {
             f.innerHTML += `<div class="post-card"><h2>${p.t}</h2><p>${p.b}</p><small>Автор: ${p.nick}</small></div>`;
@@ -257,7 +259,7 @@
     async function sendForum() {
         const msg = document.getElementById('f-msg').value;
         if(msg && checkCD()) {
-            await supabase.from('forum').insert([{ msg, nick: userNick, category: currentForumCat }]);
+            await db.from('forum').insert([{ msg, nick: userNick, category: currentForumCat }]);
             addXP(5); loadForum(currentForumCat);
             document.getElementById('f-msg').value = '';
         }
@@ -267,7 +269,7 @@
         currentForumCat = c;
         document.getElementById('f-btn-flud').className = c==='flud'?'active':'';
         document.getElementById('f-btn-zalaz').className = c==='zalaz'?'active':'';
-        const { data } = await supabase.from('forum').select('*').eq('category', c).order('id', { ascending: false });
+        const { data } = await db.from('forum').select('*').eq('category', c).order('id', { ascending: false });
         const f = document.getElementById('forum-feed'); f.innerHTML = '';
         if(data) data.forEach(m => {
             f.innerHTML += `<div style="padding:10px; border-bottom:1px solid var(--y)"><b>${m.nick}:</b> ${m.msg}</div>`;
@@ -279,14 +281,14 @@
         if(o && d && checkCD()) {
             const payload = { o, d };
             if(tempCoord) { payload.mX = tempCoord.x; payload.mY = tempCoord.y; payload.mF = tempCoord.f; }
-            await supabase.from('wiki').insert([payload]);
+            await db.from('wiki').insert([payload]);
             tempCoord = null; document.getElementById('w-obj').value = ''; document.getElementById('w-desc').value = '';
             addXP(15); loadWiki();
         }
     }
 
     async function loadWiki() {
-        const { data } = await supabase.from('wiki').select('*').order('id', { ascending: false });
+        const { data } = await db.from('wiki').select('*').order('id', { ascending: false });
         const f = document.getElementById('wiki-feed'); f.innerHTML = '';
         if(data) data.forEach(w => {
             let btn = w.mF ? `<button class="btn-jump" onclick="jumpToMap('${w.mF}', ${w.mX}, ${w.mY})">📍 НА КАРТУ</button>` : '';
@@ -294,7 +296,6 @@
         });
     }
 
-    // --- СИСТЕМНОЕ ---
     function switchTab(id) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
@@ -307,7 +308,6 @@
         document.getElementById('profile-stats').innerHTML = `
             <strong>НИК:</strong> ${userNick}<br>
             <strong>ОПЫТ:</strong> ${userXP} XP<br>
-            <strong>В КОМАНДЕ С:</strong> ${localStorage.getItem('reg_date')}<br>
             <strong>СТАТУС:</strong> <span style="color:#0f0">В СЕТИ</span>
         `;
     }
