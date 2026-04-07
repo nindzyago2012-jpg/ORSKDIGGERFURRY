@@ -6,7 +6,7 @@
     <title>Orsk Digger Project | Online</title>
     <link rel="icon" type="image/png" href="assets/logo.png">
     
-    <!-- Используем надежный источник библиотеки -->
+    <!-- Используем надежный CDN -->
     <script src="https://cloudflare.com"></script>
     
     <style>
@@ -57,7 +57,7 @@
     <img src="assets/logo.png" id="main-logo" class="logo-img" onclick="playMeow()">
     <h1>ORSK DIGGER PROJECT</h1>
     <div class="lvl-box">
-        <span id="lvl-text" style="font-size: 18px; font-weight: bold;">Связь...</span>
+        <span id="lvl-text" style="font-size: 18px; font-weight: bold;">Проверка связи...</span>
         <div class="xp-bar"><div id="xp-fill"></div></div>
         <div id="xp-text" style="font-size: 13px; font-weight: bold; margin-top: 5px;">0 XP</div>
     </div>
@@ -137,19 +137,24 @@
     
     let db;
     let userNick, userXP = 0, currentMapFile = 'maposn.jpg', currentForumCat = 'flud', lastAction = 0;
+    let isOffline = false;
 
-    // --- ФИНАЛЬНАЯ ИНИЦИАЛИЗАЦИЯ С ПОЛНЫМ MOCK-ОБЪЕКТОМ ---
+    // --- ИНИЦИАЛИЗАЦИЯ ---
     function initSupabase() {
         if (window.supabase) {
             try {
                 db = window.supabase.createClient(SUB_URL, SUB_KEY);
                 console.log("🔥 Supabase подключен!");
+                document.getElementById('lvl-text').innerText = "Статус: Подключено";
+                isOffline = false;
                 return;
             } catch (e) { console.error(e); }
         }
         
         console.warn("⚠️ Режим офлайн. Проверь VPN.");
-        const mockResponse = { data: [], error: null };
+        document.getElementById('lvl-text').innerText = "Статус: ОФЛАЙН (Нужен VPN)";
+        isOffline = true;
+        const mockResponse = { data: [], error: { message: "ОФЛАЙН РЕЖИМ: Включи VPN для записи!" } };
         const mockChain = {
             select: function() { return this; },
             eq: function() { return this; },
@@ -182,70 +187,38 @@
         changeTheme(localStorage.getItem('site_theme') || 'default');
     }
 
-    // --- ФУНКЦИИ ---
-    async function loadBlog() {
-        const { data } = await db.from('posts').select('*').order('id', { ascending: false });
-        const f = document.getElementById('feed'); f.innerHTML = '';
-        if(data) data.forEach(p => {
-            f.innerHTML += `<div class="post-card"><h2>${p.t}</h2><p>${p.b}</p><small>Автор: ${p.nick}</small></div>`;
-        });
-    }
-
+    // --- ФУНКЦИИ ОТПРАВКИ С АЛЕРТАМИ ---
     async function sendPost() {
         const t = document.getElementById('t-title').value, b = document.getElementById('t-body').value;
         if(t && b && checkCD()) {
-            await db.from('posts').insert([{ t, b, nick: userNick }]);
+            const { error } = await db.from('posts').insert([{ t, b, nick: userNick }]);
+            if (error) return alert("Ошибка: " + error.message);
+            alert("Отчет добавлен в архив!");
             addXP(10); await loadBlog();
             document.getElementById('t-title').value = ''; document.getElementById('t-body').value = '';
         }
     }
 
-    async function loadForum(c) {
-        currentForumCat = c;
-        document.getElementById('f-btn-flud').className = c==='flud'?'active':'';
-        document.getElementById('f-btn-zalaz').className = c==='zalaz'?'active':'';
-        const { data } = await db.from('forum').select('*').eq('category', c).order('id', { ascending: false });
-        const f = document.getElementById('forum-feed'); f.innerHTML = '';
-        if(data) data.forEach(m => {
-            f.innerHTML += `<div style="padding:10px; border-bottom:1px solid var(--y)"><b>${m.nick}:</b> ${m.msg}</div>`;
-        });
-    }
-
     async function sendForum() {
         const msg = document.getElementById('f-msg').value;
         if(msg && checkCD()) {
-            await db.from('forum').insert([{ msg, nick: userNick, category: currentForumCat }]);
+            const { error } = await db.from('forum').insert([{ msg, nick: userNick, category: currentForumCat }]);
+            if (error) return alert("Ошибка: " + error.message);
+            alert("Сообщение отправлено!");
             addXP(5); await loadForum(currentForumCat);
             document.getElementById('f-msg').value = '';
         }
     }
 
-    async function loadWiki() {
-        const { data } = await db.from('wiki').select('*').order('id', { ascending: false });
-        const f = document.getElementById('wiki-feed'); f.innerHTML = '';
-        if(data) data.forEach(w => {
-            f.innerHTML += `<div class="post-card"><h2>${w.o}</h2><p>${w.d}</p></div>`;
-        });
-    }
-
     async function saveWiki() {
         const o = document.getElementById('w-obj').value, d = document.getElementById('w-desc').value;
         if(o && d && checkCD()) {
-            await db.from('wiki').insert([{ o, d }]);
+            const { error } = await db.from('wiki').insert([{ o, d }]);
+            if (error) return alert("Ошибка: " + error.message);
+            alert("Вики обновлена!");
             addXP(15); await loadWiki();
             document.getElementById('w-obj').value = ''; document.getElementById('w-desc').value = '';
         }
-    }
-
-    async function renderMarkers() {
-        const { data: markers } = await db.from('markers').select('*').eq('map_file', currentMapFile).order('id', { ascending: false });
-        const layer = document.getElementById('markers-layer'); layer.innerHTML = '';
-        if(markers) markers.forEach(m => {
-            const el = document.createElement('div'); el.className = 'marker'; 
-            el.style.left = m.x + "%"; el.style.top = m.y + "%";
-            el.title = m.note;
-            layer.appendChild(el);
-        });
     }
 
     async function addMarker(e) {
@@ -254,12 +227,61 @@
         const x = ((e.clientX - rect.left) / rect.width) * 100, y = ((e.clientY - rect.top) / rect.height) * 100;
         const note = prompt("Название объекта:");
         if(note) {
-            await db.from('markers').insert([{ note, x, y, map_file: currentMapFile }]);
+            const { error } = await db.from('markers').insert([{ note, x, y, map_file: currentMapFile }]);
+            if (error) return alert("Ошибка: " + error.message);
+            alert("Метка установлена!");
             addXP(5); await renderMarkers();
         }
     }
 
-    // --- СЛУЖЕБНЫЕ ---
+    // --- ФУНКЦИИ ЗАГРУЗКИ ---
+    async function loadBlog() {
+        const { data } = await db.from('posts').select('*').order('id', { ascending: false });
+        const f = document.getElementById('feed'); f.innerHTML = '';
+        if(data && data.length > 0) {
+            data.forEach(p => {
+                f.innerHTML += `<div class="post-card"><h2>${p.t}</h2><p>${p.b}</p><small>Автор: ${p.nick}</small></div>`;
+            });
+        }
+    }
+
+    async function loadForum(c) {
+        currentForumCat = c;
+        document.getElementById('f-btn-flud').className = c === 'flud' ? 'active' : '';
+        document.getElementById('f-btn-zalaz').className = c === 'zalaz' ? 'active' : '';
+        const { data } = await db.from('forum').select('*').eq('category', c);
+        const f = document.getElementById('forum-feed'); f.innerHTML = '';
+        if(data && data.length > 0) {
+            data.sort((a,b) => b.id - a.id).forEach(m => {
+                f.innerHTML += `<div style="padding:10px; border-bottom:1px solid var(--y)"><b>${m.nick}:</b> ${m.msg}</div>`;
+            });
+        }
+    }
+
+    async function loadWiki() {
+        const { data } = await db.from('wiki').select('*').order('id', { ascending: false });
+        const f = document.getElementById('wiki-feed'); f.innerHTML = '';
+        if(data && data.length > 0) {
+            data.forEach(w => {
+                f.innerHTML += `<div class="post-card"><h2>${w.o}</h2><p>${w.d}</p></div>`;
+            });
+        }
+    }
+
+    async function renderMarkers() {
+        const { data: markers } = await db.from('markers').select('*').eq('map_file', currentMapFile);
+        const layer = document.getElementById('markers-layer'); layer.innerHTML = '';
+        if(markers && markers.length > 0) {
+            markers.forEach(m => {
+                const el = document.createElement('div'); el.className = 'marker'; 
+                el.style.left = m.x + "%"; el.style.top = m.y + "%";
+                el.title = m.note;
+                layer.appendChild(el);
+            });
+        }
+    }
+
+    // --- СЕРВИСНЫЕ ---
     function checkCD() {
         const now = Date.now();
         if (now - lastAction < 5000) { alert(`☢ ПАУЗА ${Math.ceil((5000-(now-lastAction))/1000)} сек!`); return false; }
@@ -284,7 +306,6 @@
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-        if(document.getElementById('nav-'+id)) document.getElementById('nav-'+id).classList.add('active');
         if(id === 'profile-page') renderProfile();
     }
     function renderProfile() {
