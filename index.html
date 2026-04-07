@@ -6,8 +6,8 @@
     <title>Orsk Digger Project | Online</title>
     <link rel="icon" type="image/png" href="assets/logo.png">
     
-    <!-- Подключаем локальный файл библиотеки (скачай его и положи рядом!) -->
-    <script src="supabase.js"></script>
+    <!-- Подключение библиотеки напрямую из сети -->
+    <script src="https://jsdelivr.net"></script>
     
     <style>
         :root { --y: #ffcc00; --b: #0a0a0a; --g: #1a1a1a; --text: #e0e0e0; --accent: #ffcc00; }
@@ -19,7 +19,6 @@
         
         header { background: var(--y); color: var(--b); padding: 50px 0; text-align: center; border-bottom: 8px solid var(--accent); }
         .logo-img { width: 250px; height: 250px; border-radius: 50%; border: 8px solid var(--b); margin-bottom: 20px; object-fit: cover; box-shadow: 0 0 40px rgba(0,0,0,0.6); cursor: pointer; transition: transform 0.1s; }
-        .logo-img:active { transform: scale(1.1); }
         header h1 { margin: 0; font-size: 38px; letter-spacing: 5px; text-transform: uppercase; font-weight: 900; }
         
         .lvl-box { margin-top: 25px; background: rgba(0,0,0,0.5); display: inline-block; padding: 15px 30px; border: 2px solid var(--b); min-width: 320px; }
@@ -138,23 +137,28 @@
 <footer>КТО ЗАДУДОСИТ ЭТОТ САЙТ ТОТ ПИДОРАС</footer>
 
 <script>
-    // --- ИНИЦИАЛИЗАЦИЯ SUPABASE ---
+    // --- ДАННЫЕ ПРОЕКТА ---
     const SUB_URL = 'https://supabase.co';
     const SUB_KEY = 'sb_publishable_TMgSn4UaJ1bovISkRi5ifA_8BrIdZCA';
     
     let db;
-    try {
-        // Пытаемся создать клиента через объект из локального файла supabase.js
-        db = window.supabase.createClient(SUB_URL, SUB_KEY);
-    } catch (e) {
-        console.error("Ошибка библиотеки!", e);
-        alert("Ошибка сети! Не удалось подключиться к базе данных.");
-    }
-
     let userNick, userXP = 0, currentMapFile = 'maposn.jpg', currentForumCat = 'flud', lastAction = 0;
     let tempCoord = null;
 
+    // --- ПОДКЛЮЧЕНИЕ К SUPABASE ---
+    function initSupabase() {
+        try {
+            // Используем библиотеку, загруженную из интернета
+            db = window.supabase.createClient(SUB_URL, SUB_KEY);
+            console.log("База данных подключена онлайн!");
+        } catch (e) {
+            console.error("Ошибка загрузки библиотеки Supabase!", e);
+            alert("Не удалось загрузить библиотеку базы данных из интернета.");
+        }
+    }
+
     window.onload = function() {
+        initSupabase();
         userNick = localStorage.getItem('digger_nick');
         if (!userNick) {
             let n = prompt("ТВОЙ ПОЗЫВНОЙ:");
@@ -197,7 +201,7 @@
             {name: "Диггер", min: 400, max: 1000},
             {name: "Крутэлык", min: 1000, max: 999999}
         ];
-        let r = ranks.find((rank, i) => userXP >= rank.min && (ranks[i+1] ? userXP < ranks[i+1].min : true)) || ranks;
+        let r = ranks.find((rank, i) => userXP >= rank.min && (ranks[i+1] ? userXP < ranks[i+1].min : true)) || ranks[0];
         document.getElementById('lvl-text').innerText = "Статус: " + r.name;
         let progress = r.name === "Крутэлык" ? 100 : ((userXP - r.min) / (r.max - r.min)) * 100;
         document.getElementById('xp-fill').style.width = progress + "%";
@@ -308,7 +312,8 @@
         document.getElementById('profile-stats').innerHTML = `
             <strong>НИК:</strong> ${userNick}<br>
             <strong>ОПЫТ:</strong> ${userXP} XP<br>
-            <strong>СТАТУС:</strong> <span style="color:#0f0">В СЕТИ</span>
+            <strong>В КОМАНДЕ С:</strong> ${localStorage.getItem('reg_date') || "Давно"}<br>
+            <strong>СТАТУС:</strong> <span style="color:#0f0">В СЕТИ (ОНЛАЙН)</span>
         `;
     }
 
