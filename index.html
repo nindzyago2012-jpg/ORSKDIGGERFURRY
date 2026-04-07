@@ -6,8 +6,8 @@
     <title>Orsk Digger Project | Online</title>
     <link rel="icon" type="image/png" href="assets/logo.png">
     
-    <!-- Подключаем библиотеку напрямую из глобальной сети (CDN) -->
-    <script src="https://unpkg.com"></script>
+    <!-- Используем CDNJ — самый надежный источник, который редко блокируют -->
+    <script src="https://cloudflare.com"></script>
     
     <style>
         :root { --y: #ffcc00; --b: #0a0a0a; --g: #1a1a1a; --text: #e0e0e0; --accent: #ffcc00; }
@@ -58,7 +58,7 @@
     <img src="assets/logo.png" id="main-logo" class="logo-img" onclick="playMeow()">
     <h1>ORSK DIGGER PROJECT</h1>
     <div class="lvl-box">
-        <span id="lvl-text" style="font-size: 18px; font-weight: bold;">Связь...</span>
+        <span id="lvl-text" style="font-size: 18px; font-weight: bold;">Подключение...</span>
         <div class="xp-bar"><div id="xp-fill"></div></div>
         <div id="xp-text" style="font-size: 13px; font-weight: bold; margin-top: 5px;">0 XP</div>
     </div>
@@ -82,10 +82,6 @@
         <div class="sub-nav">
             <button onclick="setMap('maposn.jpg')" id="m-btn-osn" class="active">ОСНОВНАЯ</button>
             <button onclick="setMap('maplenkom.png')" id="m-btn-lenkom">ЛЕНКОМ</button>
-        </div>
-        <div style="margin-bottom: 10px; display: flex; align-items: center; gap: 15px;">
-            <span style="color:var(--y); font-weight:bold;">ЗУМ:</span>
-            <input type="range" min="100" max="500" value="100" oninput="zoomMap(this.value)" style="flex:1;">
         </div>
         <div id="map-window">
             <div id="map-area">
@@ -129,7 +125,7 @@
         <div class="form-section">
             <h2 style="color: var(--y); border-bottom: 2px solid var(--y); margin-top:0;">ЛИЧНОЕ ДЕЛО ДИГГЕРА</h2>
             <div id="profile-stats" style="font-size: 18px; line-height: 2;"></div>
-            <button class="btn-send" style="margin-top: 20px; width: auto; background: #500; color: #fff;" onclick="resetData()">СБРОСИТЬ ПРОГРЕСС XP</button>
+            <button class="btn-send" style="margin-top: 20px; width: auto; background: #500; color: #fff;" onclick="resetData()">СБРОСИТЬ ПРОГРЕСС</button>
         </div>
     </div>
 </div>
@@ -137,24 +133,26 @@
 <footer>КТО ЗАДУДОСИТ ЭТОТ САЙТ ТОТ ПИДОРАС</footer>
 
 <script>
-    // --- ДАННЫЕ ПРОЕКТА ---
+    // --- КОНФИГУРАЦИЯ ---
     const SUB_URL = 'https://supabase.co';
     const SUB_KEY = 'sb_publishable_TMgSn4UaJ1bovISkRi5ifA_8BrIdZCA';
     
     let db;
     let userNick, userXP = 0, currentMapFile = 'maposn.jpg', currentForumCat = 'flud', lastAction = 0;
-    let tempCoord = null;
 
-    // --- ПОДКЛЮЧЕНИЕ ---
     function initSupabase() {
         try {
-            // Берем клиент напрямую из библиотеки, загруженной извне
-            const { createClient } = window.supabase;
-            db = createClient(SUB_URL, SUB_KEY);
-            console.log("Supabase подключен!");
+            if (window.supabase) {
+                db = window.supabase.createClient(SUB_URL, SUB_KEY);
+                console.log("🔥 Supabase подключен!");
+            } else {
+                throw new Error("Библиотека не найдена");
+            }
         } catch (e) {
             console.error("Ошибка библиотеки!", e);
-            alert("Ошибка! Проверь интернет или включи VPN.");
+            // Заглушка, чтобы код не "падал"
+            db = { from: () => ({ select: () => ({ order: () => ({ eq: () => ({ data: [] }) }) }), insert: () => ({}) }) };
+            alert("☢ ОШИБКА СЕТИ: Библиотека заблокирована. Включи VPN!");
         }
     }
 
@@ -181,7 +179,18 @@
         changeTheme(localStorage.getItem('site_theme') || 'default');
     }
 
-    // --- XP И РАНГИ ---
+    function checkCD() {
+        const now = Date.now();
+        if (now - lastAction < 5000) { alert(`☢ ПАУЗА ${Math.ceil((5000-(now-lastAction))/1000)} сек!`); return false; }
+        lastAction = now; return true;
+    }
+
+    function addXP(v) { 
+        userXP = parseInt(localStorage.getItem('digger_xp') || "0") + v;
+        localStorage.setItem('digger_xp', userXP);
+        updateLVLUI();
+    }
+
     function updateLVLUI() {
         userXP = parseInt(localStorage.getItem('digger_xp') || "0");
         const ranks = [
@@ -196,18 +205,6 @@
         let progress = r.name === "Крутэлык" ? 100 : ((userXP - r.min) / (r.max - r.min)) * 100;
         document.getElementById('xp-fill').style.width = progress + "%";
         document.getElementById('xp-text').innerText = `${userXP} XP`;
-    }
-
-    function addXP(v) { 
-        userXP = parseInt(localStorage.getItem('digger_xp') || "0") + v;
-        localStorage.setItem('digger_xp', userXP);
-        updateLVLUI();
-    }
-
-    function checkCD() {
-        const now = Date.now();
-        if (now - lastAction < 5000) { alert(`☢ ПАУЗА ${Math.ceil((5000-(now-lastAction))/1000)} сек!`); return false; }
-        lastAction = now; return true;
     }
 
     // --- КАРТА ---
@@ -268,6 +265,8 @@
 
     async function loadForum(c) {
         currentForumCat = c;
+        document.getElementById('f-btn-flud').className = c==='flud'?'active':'';
+        document.getElementById('f-btn-zalaz').className = c==='zalaz'?'active':'';
         const { data } = await db.from('forum').select('*').eq('category', c).order('id', { ascending: false });
         const f = document.getElementById('forum-feed'); f.innerHTML = '';
         if(data) data.forEach(m => {
@@ -292,11 +291,11 @@
         });
     }
 
-    // --- СЕРВИСНЫЕ ---
     function switchTab(id) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.add('active');
+        if(document.getElementById('nav-'+id)) document.getElementById('nav-'+id).classList.add('active');
         if(id === 'profile-page') renderProfile();
     }
 
@@ -304,10 +303,9 @@
         document.getElementById('profile-stats').innerHTML = `<strong>НИК:</strong> ${userNick}<br><strong>ОПЫТ:</strong> ${userXP} XP`;
     }
 
-    function zoomMap(v) { document.getElementById('map-area').style.width = v + "%"; }
-    function changeTheme(t) { document.body.setAttribute('data-theme', t); localStorage.setItem('site_theme', t); }
-    function resetData() { localStorage.setItem('digger_xp', '0'); location.reload(); }
     function playMeow() { new Audio('assets/meow.mp3').play().catch(()=>{}); }
+    function changeTheme(t) { document.body.setAttribute('data-theme', t); localStorage.setItem('site_theme', t); }
+    function resetData() { localStorage.clear(); location.reload(); }
 </script>
 </body>
 </html>
