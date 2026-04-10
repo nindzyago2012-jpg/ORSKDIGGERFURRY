@@ -2,7 +2,9 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>DIGGER NET | HOSTED</title>
+    <title>DIGGER NET | GITHUB EDITION</title>
+    <!-- Пытаемся загрузить Gun еще раз, но теперь с защитой -->
+    <script src="https://jsdelivr.net"></script>
     <style>
         :root { --bg: #000; --text: #0f0; --accent: #0f0; }
         body { background: var(--bg); color: var(--text); font-family: 'Courier New', monospace; padding: 20px; margin: 0; }
@@ -22,7 +24,11 @@
         body.pnv { --bg: #001a00; --text: #00ff00; --accent: #005500; }
     </style>
 </head>
-<body class="classic">
+<body>
+
+<div id="status" style="background: red; color: #000; text-align: center; display: none; font-weight: bold;">
+    ОШИБКА: БИБЛИОТЕКА БАЗЫ ДАННЫХ НЕ ЗАГРУЖЕНА
+</div>
 
 <div class="nav">
     <a onclick="route('archive')">/Архив</a>
@@ -32,28 +38,26 @@
 </div>
 
 <div id="archive" class="page active">
-    <h2>> НОВЫЙ ОБЪЕКТ</h2>
-    <div class="box">
-        <input type="text" id="obj-title" placeholder="Название">
-        <input type="text" id="obj-coords" placeholder="Координаты">
-        <textarea id="obj-desc" placeholder="Описание..."></textarea>
-        <button onclick="saveObject()">ОПУБЛИКОВАТЬ ДЛЯ ВСЕХ (+50 XP)</button>
-    </div>
+    <h2>[ ОБЪЕКТЫ ]</h2>
+    <input type="text" id="obj-title" placeholder="Название объекта">
+    <input type="text" id="obj-coords" placeholder="Координаты">
+    <textarea id="obj-desc" placeholder="Описание..."></textarea>
+    <button onclick="saveObject()">ОПУБЛИКОВАТЬ В СЕТЬ (+50 XP)</button>
     <div id="archive-list"></div>
 </div>
 
 <div id="forum" class="page">
-    <h2>> ГЛОБАЛЬНЫЙ ЧАТ</h2>
-    <div id="chat-box" style="height: 350px; overflow-y: auto; border: 1px solid var(--accent); padding: 10px; margin-bottom: 10px;"></div>
+    <h2>[ ОБЩИЙ ЧАТ ]</h2>
+    <div id="chat-box" style="height: 300px; overflow-y: auto; border: 1px solid var(--accent); padding: 10px; margin-bottom: 10px;"></div>
     <div style="display: flex; gap: 5px;">
-        <input type="text" id="chat-input" placeholder="Сообщение...">
-        <button style="width: auto;" onclick="sendMessage()">SEND</button>
+        <input type="text" id="chat-input" placeholder="Ваше сообщение...">
+        <button onclick="sendChat()" style="width: auto;">SEND</button>
     </div>
 </div>
 
 <div id="profile" class="page">
-    <h2>> ТЕРМИНАЛ</h2>
-    <input type="text" id="nick-input" onchange="saveNick()" placeholder="Ваш ник">
+    <h2>[ ДОСЬЕ ]</h2>
+    <input type="text" id="nick-input" onchange="saveNick()" placeholder="Никнейм">
     <div class="box">
         <p>УРОВЕНЬ: <span id="lvl">1</span> | ОПЫТ: <span id="xp">0</span></p>
         <div class="xp-bar"><div id="xp-fill"></div></div>
@@ -61,109 +65,105 @@
 </div>
 
 <div id="settings" class="page">
-    <h2>> ТЕМЫ</h2>
+    <h2>[ СИСТЕМА ]</h2>
     <select onchange="changeTheme(this.value)" id="theme-select">
         <option value="classic">Classic</option>
-        <option value="old">Old</option>
+        <option value="old">Old School</option>
         <option value="boykisser">Boykisser:3</option>
         <option value="pnv">ПНВ</option>
     </select>
 </div>
 
 <script>
+    let gun, db;
     let state = {
-        nick: localStorage.getItem('d_nick') || 'User' + Math.floor(Math.random()*99),
+        nick: localStorage.getItem('d_nick') || 'Digger' + Math.floor(Math.random()*99),
         xp: parseInt(localStorage.getItem('d_xp')) || 0,
         theme: localStorage.getItem('d_theme') || 'classic'
     };
 
     window.onload = function() {
+        if (typeof Gun === 'undefined') {
+            document.getElementById('status').style.display = 'block';
+            return;
+        }
+
+        // Подключаемся к публичным узлам Gun, чтобы данные летали между пользователями
+        gun = Gun([
+            'https://herokuapp.com',
+            'https://herokuapp.com'
+        ]);
+        db = gun.get('digger_fury_network_v1');
+
         document.getElementById('nick-input').value = state.nick;
         document.getElementById('theme-select').value = state.theme;
         changeTheme(state.theme);
-        updateUI();
-        
-        // Запускаем обновление данных каждые 3 секунды
-        setInterval(() => {
-            fetchData('chat', renderChat);
-            fetchData('objects', renderObjects);
-        }, 3000);
+        renderProfile();
+
+        // Слушаем чат
+        db.get('chat').map().on((data, id) => {
+            if(!data || document.getElementById('msg-'+id)) return;
+            const msgDiv = document.createElement('div');
+            msgDiv.id = 'msg-'+id;
+            msgDiv.className = 'msg';
+            msgDiv.innerHTML = `<b>${data.author}:</b> ${data.text}`;
+            const box = document.getElementById('chat-box');
+            box.appendChild(msgDiv);
+            box.scrollTop = box.scrollHeight;
+        });
+
+        // Слушаем архив
+        db.get('objects').map().on((data, id) => {
+            if(!data || document.getElementById('obj-'+id)) return;
+            const objDiv = document.createElement('div');
+            objDiv.id = 'obj-'+id;
+            objDiv.className = 'box';
+            objDiv.innerHTML = `<strong>${data.title}</strong> [${data.coords}]<br>${data.desc}`;
+            document.getElementById('archive-list').prepend(objDiv);
+        });
     };
 
-    function route(id) {
+    window.route = (id) => {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.getElementById(id).classList.add('active');
-    }
+    };
 
-    function changeTheme(t) {
+    window.changeTheme = (t) => {
         state.theme = t;
         document.body.className = t;
         localStorage.setItem('d_theme', t);
-    }
+    };
 
-    function saveNick() {
+    window.saveNick = () => {
         state.nick = document.getElementById('nick-input').value;
         localStorage.setItem('d_nick', state.nick);
-    }
+    };
 
-    function updateUI() {
+    function renderProfile() {
         document.getElementById('lvl').innerText = Math.floor(state.xp / 100) + 1;
         document.getElementById('xp').innerText = state.xp % 100;
         document.getElementById('xp-fill').style.width = (state.xp % 100) + '%';
         localStorage.setItem('d_xp', state.xp);
     }
 
-    // РАБОТА С СЕРВЕРОМ
-    async function postData(type, data) {
-        const formData = new FormData();
-        formData.append('type', type);
-        formData.append('data', JSON.stringify(data));
-        await fetch('server.php', { method: 'POST', body: formData });
-    }
+    window.sendChat = () => {
+        const val = document.getElementById('chat-input').value;
+        if(!val || !db) return;
+        db.get('chat').set({ author: state.nick, text: val, time: Date.now() });
+        document.getElementById('chat-input').value = '';
+        state.xp += 10; renderProfile();
+    };
 
-    async function fetchData(type, callback) {
-        const res = await fetch('server.php?type=' + type);
-        const data = await res.json();
-        callback(data);
-    }
-
-    // ЧАТ
-    function sendMessage() {
-        const input = document.getElementById('chat-input');
-        if(!input.value) return;
-        const msg = { author: state.nick, text: input.value, time: new Date().toLocaleTimeString() };
-        postData('chat', msg).then(() => fetchData('chat', renderChat));
-        input.value = '';
-        state.xp += 10; updateUI();
-    }
-
-    function renderChat(data) {
-        const box = document.getElementById('chat-box');
-        box.innerHTML = data.map(m => `<div class="msg"><small>${m.time}</small> <b>${m.author}:</b> ${m.text}</div>`).join('');
-    }
-
-    // ОБЪЕКТЫ
-    function saveObject() {
-        const obj = {
-            title: document.getElementById('obj-title').value,
-            coords: document.getElementById('obj-coords').value || "ЗАСЕКРЕЧЕНО",
-            desc: document.getElementById('obj-desc').value,
-            author: state.nick
-        };
-        if(!obj.title || !obj.desc) return alert("Заполни поля!");
-        postData('objects', obj).then(() => fetchData('objects', renderObjects));
-        state.xp += 50; updateUI();
+    window.saveObject = () => {
+        const title = document.getElementById('obj-title').value;
+        const desc = document.getElementById('obj-desc').value;
+        const coords = document.getElementById('obj-coords').value || "NONE";
+        if(!title || !desc || !db) return alert("Заполни поля!");
+        db.get('objects').set({ title, desc, coords, author: state.nick });
+        state.xp += 50; renderProfile();
         document.getElementById('obj-title').value = '';
         document.getElementById('obj-desc').value = '';
-    }
-
-    function renderObjects(data) {
-        document.getElementById('archive-list').innerHTML = data.reverse().map(o => `
-            <div class="box">
-                <strong>${o.title}</strong> [${o.coords}]<br><p>${o.desc}</p><small>От: ${o.author}</small>
-            </div>
-        `).join('');
-    }
+    };
 </script>
 </body>
 </html>
